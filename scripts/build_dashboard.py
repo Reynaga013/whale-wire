@@ -16,7 +16,9 @@ from datetime import datetime, timezone
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 LATEST_PATH = os.path.join(BASE_DIR, "data", "latest.json")
-OUTPUT_PATH = os.path.join(BASE_DIR, "dashboard.html")
+# Se escribe directo en docs/index.html para que GitHub Pages (sirviendo la
+# carpeta /docs de la rama main) lo publique tal cual, sin paso intermedio.
+OUTPUT_PATH = os.path.join(BASE_DIR, "docs", "index.html")
 CSS_PATH = os.path.join(SCRIPTS_DIR, "dashboard_style.css")
 JS_PATH = os.path.join(SCRIPTS_DIR, "dashboard_app.js")
 
@@ -197,6 +199,7 @@ window.__DATA__ = {data_json};
 </script>
 """
 
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         f.write(html_out)
 
