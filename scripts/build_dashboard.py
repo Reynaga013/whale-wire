@@ -16,6 +16,12 @@ from datetime import datetime, timezone
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 LATEST_PATH = os.path.join(BASE_DIR, "data", "latest.json")
+# Estado 13F persistido entre corridas (ver pipeline.py). Se re-embebe en el
+# HTML publicado (ver ww-state-13f abajo) para que la PRÓXIMA corrida del
+# scheduled task pueda recuperarlo leyendo el artifact ya publicado, sin
+# depender de Artifact read_db/write_db (que resultó no confiable desde una
+# sesión de trigger desatendida) ni de un git push exitoso.
+FUND_STATE_PATH = os.path.join(BASE_DIR, "data", "13f_state.json")
 # Se escribe directo en docs/index.html para que GitHub Pages (sirviendo la
 # carpeta /docs de la rama main) lo publique tal cual, sin paso intermedio.
 OUTPUT_PATH = os.path.join(BASE_DIR, "docs", "index.html")
@@ -89,6 +95,22 @@ def build_dashboard():
 
     data_json = json.dumps(data, default=str, separators=(",", ":"))
     data_json = data_json.replace("</", "<\\/")  # evitar cierre prematuro de </script>
+
+    # Estado 13F completo (ya recortado a MAX_STATE_HOLDINGS_PER_FUND por
+    # pipeline.py) embebido en un <script> aparte, separado de window.__DATA__
+    # (que solo lleva un resumen de holdings para no inflar el payload de UI).
+    # La PRÓXIMA corrida del pipeline lee este HTML publicado (Artifact
+    # action "read") y extrae este bloque con scripts/extract_prev_state.py
+    # para reconstruir data/13f_state.json como estado previo — así el
+    # estado sobrevive entre corridas sin depender de Artifact read_db/
+    # write_db ni de que el git push de vuelta a GitHub tenga éxito.
+    if os.path.exists(FUND_STATE_PATH):
+        with open(FUND_STATE_PATH, "r") as f:
+            fund_state = json.load(f)
+    else:
+        fund_state = {}
+    state_json = json.dumps(fund_state, default=str, separators=(",", ":"))
+    state_json = state_json.replace("</", "<\\/")
 
     tabbar_html = build_tabbar()
 
@@ -194,6 +216,7 @@ def build_dashboard():
 <script>
 window.__DATA__ = {data_json};
 </script>
+<script id="ww-state-13f" type="application/json">{state_json}</script>
 <script>
 {js}
 </script>
