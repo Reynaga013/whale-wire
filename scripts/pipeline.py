@@ -36,6 +36,15 @@ SENTIMENT_ALERT_THRESHOLD = 0.5       # |compound| promedio por categoría
 MOVER_ALERT_THRESHOLD_PCT = 8.0       # % de cambio para considerarlo notable
 FUND_CHANGE_ALERT_PCT = 15.0          # % de cambio en valor de posición 13F
 
+# Tope de holdings por fondo que se persisten en 13f_state.json. El estado se
+# guarda en la base de datos del Artifact (límite ~256KB por documento) para
+# sobrevivir entre corridas del scheduled task, así que no puede crecer sin
+# límite — fondos como Renaissance Technologies reportan miles de posiciones.
+# Se conservan las de mayor valor (las más relevantes para detectar cambios
+# notables); las posiciones muy pequeñas se pierden del baseline de diff, lo
+# cual es un costo aceptable para una señal aproximada.
+MAX_STATE_HOLDINGS_PER_FUND = 250
+
 
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
@@ -143,10 +152,13 @@ def run_13f(alerts):
             else:
                 alerts.append(f"Primer snapshot 13F guardado para {fund} (filing {snap.get('filing_date')})")
 
+            trimmed_holdings = sorted(
+                snap.get("holdings", []), key=lambda h: h.get("value_usd") or 0, reverse=True
+            )[:MAX_STATE_HOLDINGS_PER_FUND]
             new_state[fund] = {
                 "accession_number": acc,
                 "filing_date": snap.get("filing_date"),
-                "holdings": snap.get("holdings", []),
+                "holdings": trimmed_holdings,
             }
 
     save_fund_state(new_state)
