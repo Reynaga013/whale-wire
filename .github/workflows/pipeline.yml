@@ -1,0 +1,53 @@
+name: Actualizar dashboard Whale & Wire
+
+# Corre en la infraestructura de GitHub (no depende de Claude ni de ninguna
+# sesion de Anthropic): recolecta noticias/mercado/13F, regenera
+# docs/index.html y lo publica en GitHub Pages haciendo commit+push el
+# mismo con el GITHUB_TOKEN que Actions provee automaticamente. Esto
+# reemplaza al intento anterior de que la tarea programada de Claude hiciera
+# el push -- el proxy de git de Anthropic bloquea push desde cualquier
+# sesion de Claude (interactiva o de scheduled task), asi que esa parte del
+# trabajo se mueve aqui, donde no hay ese bloqueo.
+
+on:
+  schedule:
+    # Cada 4 horas, en UTC. GitHub puede retrasar corridas programadas unos
+    # minutos en horas de mucha carga -- no esta garantizado al segundo.
+    - cron: "10 */4 * * *"
+  workflow_dispatch: {}  # permite lanzarlo a mano desde la pestana Actions
+
+permissions:
+  contents: write  # necesario para que el paso final pueda hacer git push
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repo
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Correr pipeline (noticias, mercado, 13F, alerts)
+        run: python3 scripts/pipeline.py
+
+      - name: Generar dashboard (docs/index.html)
+        run: python3 scripts/build_dashboard.py
+
+      - name: Publicar cambios en el repo (GitHub Pages sirve docs/)
+        run: |
+          git config user.name "Whale & Wire bot"
+          git config user.email "actions@github.com"
+          git add docs/ data/13f_state.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios que publicar en esta corrida."
+          else
+            git commit -m "Actualizacion automatica $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi
