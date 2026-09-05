@@ -114,6 +114,18 @@ def collect_sector_news(sectors=None, max_per_sector=12):
     return items
 
 
+_PLACEHOLDER_TITLE_RE = re.compile(r"(?i)^symbol_*\b")
+
+
+def _looks_like_placeholder_title(title):
+    """Algunas fuentes (visto con páginas de CNN tipo '{symbol} Stock Quote...')
+    sirven una plantilla sin interpolar cuando el ticker es poco común, dejando
+    literalmente la palabra 'symbol'/'symbol__' en el título en vez del ticker
+    real. Se descartan esos casos en vez de mostrarlos tal cual al usuario."""
+    t = (title or "").strip()
+    return bool(_PLACEHOLDER_TITLE_RE.match(t))
+
+
 def collect_ticker_news(tickers, max_per_ticker=8):
     items = []
     for ticker in tickers:
@@ -123,6 +135,8 @@ def collect_ticker_news(tickers, max_per_ticker=8):
             continue
         for entry in feed.entries[:max_per_ticker]:
             item = _entry_to_item(entry, f"ticker:{ticker}")
+            if _looks_like_placeholder_title(item.get("title")):
+                continue
             item["ticker"] = ticker
             items.append(item)
     return items

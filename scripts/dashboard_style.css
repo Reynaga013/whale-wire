@@ -32,15 +32,21 @@ html { -webkit-text-size-adjust: 100%; }
   --shadow-card: 0 1px 1px rgba(0,0,0,0.03), 0 4px 14px rgba(28,28,30,0.06);
   --shadow-elevated: 0 16px 40px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.10);
   --shadow-tabbar: 0 -1px 0 rgba(0,0,0,0.06);
+  /* En modo claro el shadow-card ya separa las tarjetas del fondo; en modo
+     oscuro un shadow negro sobre fondo casi negro es invisible (bug real
+     visto en producción: todo se veía plano), así que ahí se usa este
+     hairline en vez de depender del shadow para dar profundidad. */
+  --card-hairline: transparent;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --bg: #000000;
-    --card: #1C1C1E;
-    --card-2: #262628;
+    --card: #201F22;
+    --card-2: #29282B;
     --line: #38383A;
+    --card-hairline: rgba(255,255,255,0.10);
     --ink: #F2F2F7;
     --ink-soft: #98989D;
     --ink-tertiary: #48484A;
@@ -67,9 +73,10 @@ html { -webkit-text-size-adjust: 100%; }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #000000;
-  --card: #1C1C1E;
-  --card-2: #262628;
+  --card: #201F22;
+  --card-2: #29282B;
   --line: #38383A;
+  --card-hairline: rgba(255,255,255,0.10);
   --ink: #F2F2F7;
   --ink-soft: #98989D;
   --ink-tertiary: #48484A;
@@ -144,6 +151,7 @@ body {
   background: var(--hero-gradient); color: var(--hero-ink);
   border-radius: 22px; padding: 20px 20px 18px;
   box-shadow: var(--shadow-elevated);
+  border: 0.5px solid var(--card-hairline);
   position: relative; overflow: hidden;
 }
 .hero .label { font-size: 12.5px; color: var(--hero-ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -151,7 +159,11 @@ body {
 .hero .sub { font-size: 13px; color: var(--hero-ink-soft); }
 .hero .glow {
   position: absolute; width: 220px; height: 220px; border-radius: 50%;
-  right: -70px; top: -80px; opacity: 0.35; filter: blur(10px);
+  right: -70px; top: -80px; opacity: 0.5; filter: blur(10px);
+  /* Bug real: este elemento no tenía background, así que era invisible y la
+     tarjeta hero se veía completamente plana. Un glow radial con el color
+     de acento le da la profundidad/color que el diseño original buscaba. */
+  background: radial-gradient(circle, var(--accent) 0%, transparent 72%);
 }
 
 /* ---------- stat chips ---------- */
@@ -160,6 +172,7 @@ body {
 .stat-chip {
   flex: 0 0 auto; min-width: 92px; background: var(--card); border-radius: 16px;
   padding: 10px 14px; box-shadow: var(--shadow-card);
+  border: 0.5px solid var(--card-hairline);
 }
 .stat-chip .n { font-size: 20px; font-weight: 700; }
 .stat-chip .l { font-size: 11px; color: var(--ink-soft); margin-top: 1px; }
@@ -180,15 +193,16 @@ body {
 .chip-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; scrollbar-width: none; }
 .chip-row::-webkit-scrollbar { display: none; }
 .chip {
-  flex: 0 0 auto; border: none; font-family: inherit; cursor: pointer;
+  flex: 0 0 auto; font-family: inherit; cursor: pointer;
   background: var(--card); color: var(--ink); font-size: 13px; font-weight: 600;
   padding: 8px 14px; border-radius: 999px; box-shadow: var(--shadow-card);
+  border: 0.5px solid var(--card-hairline);
   white-space: nowrap;
 }
 .chip.active { background: var(--accent-gradient); color: var(--accent-text); box-shadow: none; }
 
 /* ---------- grouped list ---------- */
-.list { background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-card); }
+.list { background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-card); border: 0.5px solid var(--card-hairline); }
 .row {
   display: flex; align-items: center; gap: 10px; padding: 12px 14px;
   border: none; border-bottom: 0.5px solid var(--line); text-decoration: none; color: inherit;
@@ -230,7 +244,7 @@ body {
 .sent-fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
 
 /* ---------- cards / disclaimer ---------- */
-.card { background: var(--card); border-radius: 16px; padding: 14px 16px; box-shadow: var(--shadow-card); }
+.card { background: var(--card); border-radius: 16px; padding: 14px 16px; box-shadow: var(--shadow-card); border: 0.5px solid var(--card-hairline); }
 .disclaimer {
   display: flex; gap: 10px; align-items: flex-start; background: var(--accent-soft);
   border-radius: 14px; padding: 12px 14px; font-size: 12px; color: var(--ink-soft); margin-bottom: 16px;
@@ -248,13 +262,14 @@ body {
 .field-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); margin: 16px 2px 6px; }
 .field-label:first-child { margin-top: 0; }
 .text-field {
-  width: 100%; border: none; border-radius: 14px; padding: 13px 14px; font-size: 16px;
+  width: 100%; border-radius: 14px; padding: 13px 14px; font-size: 16px;
   background: var(--card); color: var(--ink); box-shadow: var(--shadow-card);
+  border: 0.5px solid var(--card-hairline);
   font-family: inherit;
 }
 .text-field::placeholder { color: var(--ink-tertiary); }
 
-.toggle-row { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: 14px; padding: 13px 14px; box-shadow: var(--shadow-card); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: 14px; padding: 13px 14px; box-shadow: var(--shadow-card); border: 0.5px solid var(--card-hairline); }
 .toggle-row .t { font-size: 14.5px; }
 .toggle-row .d { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
 .switch { position: relative; width: 46px; height: 28px; border-radius: 999px; background: var(--ink-tertiary); border: none; cursor: pointer; flex: 0 0 auto; transition: background .15s; }
