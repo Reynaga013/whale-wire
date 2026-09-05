@@ -373,8 +373,8 @@ footer.legal { text-align: center; font-size: 11px; color: var(--ink-tertiary); 
     </section>
 
     <section class="screen" data-tab="asesor" hidden>
-      <div class="section-title" style="margin-top:4px">¿Cuánto quieres invertir?</div>
-      <input class="text-field" id="amount-input" type="text" inputmode="decimal" placeholder="Ej. 5000 (opcional)">
+      <div class="section-title" style="margin-top:4px">¿Cuánto quieres invertir hoy? (€, opcional)</div>
+      <input class="text-field" id="amount-input" type="text" inputmode="decimal" placeholder="Ej. 20">
       <div class="field-label">Horizonte temporal</div>
       <div class="segmented" id="horizon-segment">
         <button class="segment" data-val="lt2">&lt;2a</button>
@@ -451,6 +451,9 @@ window.__DATA__ = {"generated_at":"2026-09-04T12:51:58.142592+00:00","news":{"it
   }
   function fmtUSD(n) {
     return "$" + Math.round(n).toLocaleString("en-US");
+  }
+  function fmtEUR(n) {
+    return Math.round(n).toLocaleString("es-ES") + " €";
   }
   function pctSpan(n) {
     n = Number(n);
@@ -737,6 +740,19 @@ window.__DATA__ = {"generated_at":"2026-09-04T12:51:58.142592+00:00","news":{"it
 
     var colors = ["var(--accent)", "var(--gold)", "var(--ink-tertiary)"];
     var labels = ["Acciones (renta variable)", "Bonos (renta fija)", "Efectivo / equivalentes"];
+    // Explicación en una frase de qué es cada categoría y, en términos generales
+    // (no personalizados, no una recomendación de compra), qué tipo de producto
+    // suele usarse para cubrirla — nunca un ticker/empresa concreta.
+    var explain = [
+      "Fracción invertida en empresas (vía fondos, no acciones sueltas). Es la que más sube y baja a corto plazo, pero la que históricamente más crece a largo plazo.",
+      "Préstamos a gobiernos o empresas que pagan un interés. Se mueve mucho menos que las acciones — sirve para suavizar los bajones.",
+      "Dinero que se queda líquido y disponible casi al momento (cuenta remunerada, depósito corto). No crece apenas, pero no baja nunca y está ahí si lo necesitas ya.",
+    ];
+    var vehicles = [
+      "Ej. un fondo indexado global diversificado (tipo \"MSCI World\" o \"S&amp;P 500\") — nunca una sola empresa suelta.",
+      "Ej. un fondo o ETF de bonos gubernamentales o corporativos a corto/medio plazo.",
+      "Ej. una cuenta remunerada, depósito a plazo fijo, o fondo monetario de tu banco.",
+    ];
     var bar = mix.map(function (p, i) {
       return '<span style="width:' + p + '%;background:' + colors[i] + '"></span>';
     }).join("");
@@ -744,10 +760,18 @@ window.__DATA__ = {"generated_at":"2026-09-04T12:51:58.142592+00:00","news":{"it
       return '<div class="li"><span class="sw" style="background:' + colors[i] + '"></span>' + labels[i] + " · " + p + "%</div>";
     }).join("");
 
-    var rows = mix.map(function (p, i) {
-      return '<div class="row"><div class="main"><div class="title">' + labels[i] + '</div></div>' +
-        '<div class="trail"><div class="num tabular">' + (amount ? fmtUSD(amount * p / 100) : p + "%") + '</div>' +
-        (amount ? '<div class="sub">' + p + "%</div>" : "") + "</div></div>";
+    // Tarjeta por categoría: nombre, qué es en una frase, cuánto le toca del
+    // monto (si el usuario puso uno) y un ejemplo genérico de dónde suele ir.
+    var catCards = mix.map(function (p, i) {
+      if (p <= 0) return "";
+      return '<div class="card" style="margin-top:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">' +
+        '<div class="title" style="font-weight:700">' + labels[i] + "</div>" +
+        '<div class="num tabular" style="font-weight:700">' + (amount ? fmtEUR(amount * p / 100) : p + "%") + "</div>" +
+        "</div>" +
+        '<p style="font-size:13px;color:var(--ink-soft);line-height:1.45;margin:6px 0 8px">' + explain[i] + "</p>" +
+        '<p style="font-size:12.5px;color:var(--ink-soft);line-height:1.4;margin:0"><b style="color:var(--ink)">¿Dónde suele ir esto?</b> ' + vehicles[i] + "</p>" +
+        "</div>";
     }).join("");
 
     var gen = (D.news.sentiment_by_category.market_general || { avg_compound: 0 });
@@ -756,23 +780,23 @@ window.__DATA__ = {"generated_at":"2026-09-04T12:51:58.142592+00:00","news":{"it
     out.innerHTML =
       emergencyNote +
       '<div class="card">' +
-      '<div class="section-title" style="margin-top:0">Asignación sugerida</div>' +
+      '<div class="section-title" style="margin-top:0">' + (amount ? "Cómo repartir " + fmtEUR(amount) : "Asignación sugerida") + '</div>' +
       '<div class="alloc-bar">' + bar + "</div>" +
       '<div class="alloc-legend">' + legend + "</div>" +
       '<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin:14px 0 0">' +
       "Para un horizonte de <b style=\"color:var(--ink)\">" + HORIZON_LABELS[advState.horizon] + "</b> y una tolerancia al riesgo " +
-      "<b style=\"color:var(--ink)\">" + advState.risk + "</b>, esta es una distribución de referencia entre grandes categorías de activos, " +
-      "no una lista de acciones específicas para comprar. Dentro de \"acciones\" se piensa normalmente en fondos indexados " +
-      "diversificados (no una sola empresa), y conviene revisar y reequilibrar la mezcla una o dos veces al año." +
+      "<b style=\"color:var(--ink)\">" + advState.risk + "</b>, esta es una distribución de referencia entre grandes categorías de activos — " +
+      "no un consejo personalizado ni una lista de acciones concretas para comprar. Conviene revisar y reequilibrar la mezcla una o dos veces al año." +
       "</p></div>" +
-      (amount ? '<div class="section-title">Con ' + fmtUSD(amount) + "</div><div class=\"list\">" + rows + "</div>" : "") +
+      catCards +
       '<div class="section-title">Contexto de hoy</div>' +
       '<div class="card"><p style="font-size:13px;color:var(--ink-soft);line-height:1.5;margin:0">' +
       "El sentimiento general del mercado ahora mismo es <b style=\"color:var(--ink)\">" + moodTxt + "</b>. " +
       "Esto es ruido de corto plazo — no debería cambiar una estrategia pensada para " + HORIZON_LABELS[advState.horizon].toLowerCase() +
-      ". Aportar de forma periódica (en vez de todo de una vez) suele suavizar el efecto de comprar justo en un mal momento." +
+      ". Con un monto pequeño y puntual como este, lo que más importa no es acertar \"dónde\" sino la costumbre de aportar seguido — " +
+      "aportar de forma periódica (en vez de todo de una vez) suele suavizar el efecto de comprar justo en un mal momento." +
       "</p></div>" +
-      '<div class="disclaimer" style="margin-top:14px"><span class="ic">ⓘ</span><div>Esto es una guía educativa general, no asesoría financiera personalizada ni una recomendación de compra/venta. ' +
+      '<div class="disclaimer" style="margin-top:14px"><span class="ic">ⓘ</span><div>Esto es una guía educativa general sobre <b>tipos</b> de activos, no asesoría financiera personalizada ni una recomendación de compra/venta de ningún producto concreto. ' +
       "No soy asesor financiero certificado — para decisiones grandes, conviene contrastar con un profesional.</div></div>";
 
     out.scrollIntoView({ behavior: "smooth", block: "start" });

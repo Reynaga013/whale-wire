@@ -176,8 +176,8 @@ def build_dashboard():
     </section>
 
     <section class="screen" data-tab="asesor" hidden>
-      <div class="section-title" style="margin-top:4px">¿Cuánto quieres invertir?</div>
-      <input class="text-field" id="amount-input" type="text" inputmode="decimal" placeholder="Ej. 5000 (opcional)">
+      <div class="section-title" style="margin-top:4px">¿Cuánto quieres invertir hoy? (€, opcional)</div>
+      <input class="text-field" id="amount-input" type="text" inputmode="decimal" placeholder="Ej. 20">
       <div class="field-label">Horizonte temporal</div>
       <div class="segmented" id="horizon-segment">
         <button class="segment" data-val="lt2">&lt;2a</button>
