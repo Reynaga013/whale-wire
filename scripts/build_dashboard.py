@@ -148,6 +148,9 @@ def build_dashboard():
       </div>
       <div class="section-title">Eventos destacados</div>
       <div class="list" id="alerts-list"></div>
+      <div class="section-title">Radar de hoy</div>
+      <div class="list" id="radar-list"></div>
+      <p style="font-size:12px;color:var(--ink-soft);line-height:1.4;margin:8px 4px 0">Cruza qué se movió fuerte hoy con las noticias que podrían explicarlo — es informativo, no una recomendación de compra o venta ni una sugerencia de "mejor opción" para invertir.</p>
       <div class="disclaimer" style="margin-top:18px"><span class="ic">ⓘ</span><div><b>Informativo, no asesoría financiera.</b> El sentimiento es una estimación automática y los datos 13F llegan con hasta 45 días de retraso respecto al cierre del trimestre.</div></div>
     </section>
 

@@ -116,6 +116,42 @@
     }
   }
 
+  /* ---------------- RADAR DE HOY ---------------- */
+  // Cruce entre movimiento de precio notable y noticias recientes del mismo
+  // símbolo (con sentimiento ya calculado). Puramente informativo: muestra
+  // qué se movió y qué se dice de ello, nunca "invierte aquí" ni un ranking
+  // de "mejor opción" — la persona decide qué hacer con la señal.
+  function renderRadar() {
+    var radar = D.radar || [];
+    var el = document.getElementById("radar-list");
+    if (!el) return;
+    if (!radar.length) {
+      el.innerHTML = '<div class="empty-state">Nada con movimiento fuerte y noticias asociadas en este ciclo.</div>';
+      return;
+    }
+    el.innerHTML = radar.map(function (r) {
+      var newsHtml = (r.news || []).slice(0, 2).map(function (n) {
+        var comp = n.sentiment ? n.sentiment.compound : 0;
+        var cls = sentColor(comp);
+        var varName = cls === "pos" ? "gain" : cls === "neg" ? "loss" : "ink-soft";
+        return '<div style="margin-top:7px;padding-top:7px;border-top:0.5px solid var(--line)">' +
+          '<div style="font-size:12.5px;line-height:1.35">' + esc(n.title) + '</div>' +
+          '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px">' + esc(n.source || "") +
+          (n.sentiment ? ' · <span style="color:var(--' + varName + ')">' + esc(n.sentiment.label) + '</span>' : "") +
+          "</div></div>";
+      }).join("");
+      var noNews = !(r.news || []).length ?
+        '<div style="font-size:12px;color:var(--ink-soft);margin-top:6px">Sin noticias específicas encontradas para este símbolo todavía.</div>' : "";
+      return '<div class="row" style="display:block;padding:12px 14px;cursor:default">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">' +
+        '<span class="ticker">' + esc(r.symbol) + '</span>' + pctSpan(r.change_pct) +
+        "</div>" +
+        '<div class="meta" style="margin-top:2px">' + esc(r.label) + "</div>" +
+        newsHtml + noNews +
+        "</div>";
+    }).join("");
+  }
+
   /* ---------------- NOTICIAS ---------------- */
   var newsState = { cat: "market_general" };
   function renderNewsChips() {
@@ -387,6 +423,7 @@
 
   /* ---------------- init ---------------- */
   renderHoy();
+  renderRadar();
   renderSentiment();
   renderNewsChips();
   renderNewsList();

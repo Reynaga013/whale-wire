@@ -98,6 +98,7 @@ def run_market_movers(alerts, news_items_accum):
     }
 
     notable_symbols = []
+    notable_info = {}
     for label, quotes in all_movers.items():
         if "gainers" not in label and "losers" not in label:
             continue
@@ -105,15 +106,33 @@ def run_market_movers(alerts, news_items_accum):
         for q in quotes[:5]:
             if abs(q.get("change_pct") or 0) >= MOVER_ALERT_THRESHOLD_PCT:
                 alerts.append(f"{q['symbol']} se movió {q['change_pct']}% ({friendly})")
-                notable_symbols.append(q["symbol"])
+                if q["symbol"] not in notable_info:
+                    notable_symbols.append(q["symbol"])
+                    notable_info[q["symbol"]] = {
+                        "symbol": q["symbol"],
+                        "change_pct": q.get("change_pct"),
+                        "label": friendly,
+                        "price": q.get("price"),
+                    }
 
-    # traer noticias de contexto para los símbolos más notables (máx 4 para no saturar)
+    # "Radar de hoy": cruce entre movimiento de precio notable y las noticias
+    # más recientes de ese mismo símbolo (con su sentimiento ya calculado).
+    # Es puramente informativo -- muestra qué se movió y qué se dice de ello,
+    # nunca una recomendación de compra/venta ni una sugerencia de "mejor
+    # opción". Limitado a los 4 símbolos más notables para no saturar de
+    # llamadas RSS por corrida.
+    radar = []
     for symbol in notable_symbols[:4]:
         extra = news_mod.collect_ticker_news([symbol], max_per_ticker=3)
         extra = sentiment_mod.score_news_items(extra)
         news_items_accum.extend(extra)
+        entry = dict(notable_info[symbol])
+        entry["news"] = extra[:3]
+        radar.append(entry)
 
-    return all_movers
+    radar.sort(key=lambda r: abs(r.get("change_pct") or 0), reverse=True)
+
+    return all_movers, radar
 
 
 def run_13f(alerts):
@@ -170,13 +189,14 @@ def run_pipeline():
     alerts = []
 
     news_data = run_news_and_sentiment(alerts)
-    movers_data = run_market_movers(alerts, news_data["items"])
+    movers_data, radar_data = run_market_movers(alerts, news_data["items"])
     funds_data = run_13f(alerts)
 
     snapshot = {
         "generated_at": _now_iso(),
         "news": news_data,
         "market_movers": movers_data,
+        "radar": radar_data,
         "funds_13f": funds_data,
         "alerts": alerts,
     }
@@ -192,6 +212,7 @@ def run_pipeline():
     print(f"Noticias: {len(news_data['items'])}")
     print(f"Sectores con sentimiento agregado: {len(news_data['sentiment_by_category'])}")
     print(f"Fondos 13F procesados: {len(funds_data)}")
+    print(f"Radar de hoy: {len(radar_data)} símbolos con movimiento + noticia")
     print(f"Alerts generadas: {len(alerts)}")
     for a in alerts:
         print(f"  - {a}")
