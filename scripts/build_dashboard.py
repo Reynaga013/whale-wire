@@ -115,7 +115,7 @@ def build_dashboard():
     tabbar_html = build_tabbar()
 
     html_out = f"""<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Whale &amp; Wire</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -126,6 +126,8 @@ def build_dashboard():
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap">
+<link rel="stylesheet" href="mobile-app.css?v=20260930-2">
+<script src="mobile-app.js?v=20260930-2" data-app="whale" defer></script>
 <style>
 {css}
 </style>
